@@ -1,0 +1,9 @@
+name,email,department,specialisation,availability
+Prof. Oluwafemi Adewale,adewale@cu.edu.ng,CIS,Computing Sciences,"MON:8-9AM|9-10AM|10-11AM,TUE:8-9AM|10-11AM,WED:8-9AM|2-3PM,THU:9-10AM,FRI:8-9AM"
+Dr. Sanjay Misra,misra@cu.edu.ng,CIS,Artificial Intelligence,"MON:10-11AM|11-12PM,TUE:8-9AM|9-10AM,WED:10-11AM|11-12PM,THU:8-9AM,FRI:10-11AM"
+Dr. Adewole Kayode,kayode@cu.edu.ng,CIS,Programming Languages,"MON:2-3PM|3-4PM,TUE:2-3PM,WED:2-3PM|3-4PM,THU:2-3PM|3-4PM,FRI:2-3PM"
+Dr. Folasade Oladele,oladele@cu.edu.ng,CIS,Digital Logic and Embedded Systems,"MON:9-10AM,TUE:9-10AM|10-11AM,WED:9-10AM,THU:10-11AM|11-12PM,FRI:9-10AM|10-11AM"
+Dr. Nurudeen Mohammed,mohammed@cu.edu.ng,CIS,Cybersecurity,"MON:11-12PM,TUE:11-12PM|2-3PM,WED:11-12PM,THU:11-12PM|2-3PM,FRI:11-12PM"
+Dr. Temitope Garba,garba@cu.edu.ng,CIS,Software Engineering,"MON:8-9AM|10-11AM,TUE:8-9AM,WED:8-9AM|10-11AM,THU:8-9AM|10-11AM,FRI:8-9AM"
+Dr. Olufunke Isinkaye,isinkaye@cu.edu.ng,MIS,Information Systems,"MON:2-3PM,TUE:2-3PM|3-4PM,WED:2-3PM,THU:3-4PM,FRI:2-3PM"
+Mr. Abiodun Adekunle,adekunle@cu.edu.ng,CIS,Computer Practicals,"MON:3-4PM,TUE:3-4PM,WED:3-4PM|4-5PM,THU:3-4PM|4-5PM,FRI:3-4PM"

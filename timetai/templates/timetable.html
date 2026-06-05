@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}View Timetable{% endblock %}
+{% block page_title %}Generated Timetable{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Weekly Timetable View</h1>
+    <p>{{ entries|length }} scheduled entries &mdash; colour-coded by level.</p>
+  </div>
+  <div class="flex gap-3 items-center">
+    <label class="form-label" style="margin-bottom:0; white-space:nowrap;">Filter Level:</label>
+    <select id="level-filter" class="form-control" style="width:auto;">
+      <option value="">All Levels</option>
+      {% for lvl in levels %}
+      <option value="{{ lvl }}">{{ lvl }}L</option>
+      {% endfor %}
+    </select>
+    <a href="{{ url_for('export.export_page') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-download"></i> Export
+    </a>
+  </div>
+</div>
+
+<!-- COLOUR LEGEND -->
+<div class="flex gap-3 mb-6" style="flex-wrap:wrap; align-items:center;">
+  <span style="font-size:12px; font-weight:600; color:var(--muted); margin-right:4px;">Legend:</span>
+  {% set legend = [
+    ("#BBDEFB","#1565C0","100 Level"),
+    ("#C8E6C9","#2E7D32","200 Level"),
+    ("#FFE0B2","#E65100","300 Level"),
+    ("#F8BBD9","#880E4F","400 Level"),
+    ("#FFF9C4","#F57F17","500 Level"),
+    ("#E8EAF6","#3949AB","Laboratory"),
+  ] %}
+  {% for bg, border, label in legend %}
+  <span style="display:flex;align-items:center;gap:5px;font-size:12px;">
+    <span style="width:14px;height:14px;background:{{ bg }};border-left:3px solid {{ border }};border-radius:2px;display:inline-block;"></span>
+    {{ label }}
+  </span>
+  {% endfor %}
+</div>
+
+{% if entries %}
+<div class="card">
+  <div class="tt-grid-wrapper">
+    <div class="tt-grid">
+      <div class="tt-header-cell">Time</div>
+      {% for day in ["MON", "TUE", "WED", "THU", "FRI"] %}
+      <div class="tt-header-cell">{{ day }}</div>
+      {% endfor %}
+
+      {% set hours = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00"] %}
+      {% set days = ["MON","TUE","WED","THU","FRI"] %}
+      {% for time in hours %}
+        {% set end_h = (time[:2]|int + 1)|string %}
+        {% set end_time = end_h.zfill(2) ~ ":00" %}
+        <div class="tt-time-cell">{{ time }}<br><span style="font-size:9px;">&ndash;{{ end_time }}</span></div>
+        {% for day in days %}
+          <div class="tt-cell">
+            {% for e in entries %}
+              {% if e.day == day and e.start_time == time %}
+                {% set level_str = e.level|string %}
+                {% set color_cls = "tt-color-lab" if e.course_type == "LAB" else "tt-color-" ~ level_str %}
+                <div class="tt-entry {{ color_cls }}" data-level="{{ e.level }}"
+                     title="{{ e.course_code }}: {{ e.course_title }} | {{ e.lecturer }} | {{ e.room }} | {{ e.student_group }}">
+                  <strong>{{ e.course_code }}</strong>
+                  <span>{{ e.room }}</span>
+                  <span>{{ e.student_group }}</span>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card mt-6">
+  <div class="card-title"><i class="bi bi-table" style="margin-right:6px;color:var(--navy);"></i>Detailed Schedule Table</div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Course</th><th>Title</th><th>Lecturer</th><th>Room</th>
+          <th>Student Group</th><th>Day</th><th>Start</th><th>End</th><th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td><strong>{{ e.course_code }}</strong></td>
+          <td>{{ e.course_title }}</td>
+          <td>{{ e.lecturer }}</td>
+          <td>{{ e.room }}</td>
+          <td>{{ e.student_group }}</td>
+          <td>{{ e.day }}</td>
+          <td>{{ e.start_time }}</td>
+          <td>{{ e.end_time }}</td>
+          <td>
+            <span class="badge {{ 'badge-blue' if e.course_type == 'LAB' else 'badge-navy' }}">
+              {{ e.course_type }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card" style="text-align:center; padding: 60px 40px;">
+  <i class="bi bi-calendar-x" style="font-size:52px; color:var(--muted); display:block; margin-bottom:16px;"></i>
+  <h2 style="font-size: 18px; color: var(--navy); margin-bottom: 8px;">No Timetable Generated Yet</h2>
+  <p style="color: var(--muted); margin-bottom: 20px;">Upload your data, configure constraints, then generate a timetable.</p>
+  <a href="{{ url_for('generate.generate_page') }}" class="btn btn-primary">
+    <i class="bi bi-play-circle-fill"></i> Go to Generate
+  </a>
+</div>
+{% endif %}
+{% endblock %}

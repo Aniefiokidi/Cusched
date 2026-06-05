@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Constraints{% endblock %}
+{% block page_title %}Constraint Configuration{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Scheduling Constraints</h1>
+    <p>Manage hard rules (must not be violated) and soft preferences (try to satisfy).</p>
+  </div>
+  <div class="flex gap-3">
+    <span class="badge badge-hard" style="padding: 6px 12px; font-size:12px;">
+      <i class="bi bi-shield-x"></i> {{ hard_constraints|length }} Hard
+    </span>
+    <span class="badge badge-soft" style="padding: 6px 12px; font-size:12px;">
+      <i class="bi bi-shield-check"></i> {{ soft_constraints|length }} Soft
+    </span>
+  </div>
+</div>
+
+<div class="constraints-grid">
+  <!-- HARD CONSTRAINTS -->
+  <div class="constraint-col hard">
+    <div class="constraint-col-title">
+      <i class="bi bi-shield-x" style="margin-right:6px;"></i>Hard Constraints &mdash; Must Not Violate
+    </div>
+    {% for c in hard_constraints %}
+    <div class="constraint-card {{ '' if c.is_active else 'inactive' }}" id="cc-{{ c.id }}">
+      <div class="c-text">
+        <div class="c-category">{{ c.category | upper }}</div>
+        {{ c.description }}
+        {% if c.is_natural_language %}
+          <span class="badge badge-blue" style="margin-top:4px;"><i class="bi bi-cpu"></i> NL Parsed</span>
+        {% endif %}
+      </div>
+      <label class="toggle-switch" title="Toggle active">
+        <input type="checkbox" class="constraint-toggle" data-id="{{ c.id }}"
+               {{ 'checked' if c.is_active else '' }}>
+        <span class="toggle-slider"></span>
+      </label>
+      <button class="btn btn-danger btn-sm constraint-delete" data-id="{{ c.id }}" title="Delete">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+    {% endfor %}
+    {% if not hard_constraints %}
+      <p class="text-muted" style="padding: 12px 0;">No hard constraints defined.</p>
+    {% endif %}
+  </div>
+
+  <!-- SOFT CONSTRAINTS -->
+  <div class="constraint-col soft">
+    <div class="constraint-col-title">
+      <i class="bi bi-shield-check" style="margin-right:6px;"></i>Soft Constraints &mdash; Preferences
+    </div>
+    {% for c in soft_constraints %}
+    <div class="constraint-card {{ '' if c.is_active else 'inactive' }}" id="cc-{{ c.id }}">
+      <div class="c-text">
+        <div class="c-category">{{ c.category | upper }}</div>
+        {{ c.description }}
+        {% if c.is_natural_language %}
+          <span class="badge badge-blue" style="margin-top:4px;"><i class="bi bi-cpu"></i> NL Parsed</span>
+        {% endif %}
+      </div>
+      <label class="toggle-switch" title="Toggle active">
+        <input type="checkbox" class="constraint-toggle" data-id="{{ c.id }}"
+               {{ 'checked' if c.is_active else '' }}>
+        <span class="toggle-slider"></span>
+      </label>
+      <button class="btn btn-danger btn-sm constraint-delete" data-id="{{ c.id }}" title="Delete">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+    {% endfor %}
+    {% if not soft_constraints %}
+      <p class="text-muted" style="padding: 12px 0;">No soft constraints defined.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ADD + NL PARSER -->
+<div class="two-col mt-6">
+  <div class="card">
+    <div class="card-title"><i class="bi bi-plus-circle-fill" style="margin-right:6px;color:var(--navy);"></i>Add New Constraint</div>
+    <form method="POST" action="{{ url_for('constraints.add_constraint') }}">
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select name="constraint_type" class="form-control">
+          <option value="HARD">Hard (must not violate)</option>
+          <option value="SOFT">Soft (preference)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-control">
+          <option value="room">Room</option>
+          <option value="lecturer">Lecturer</option>
+          <option value="time">Time</option>
+          <option value="capacity">Capacity</option>
+          <option value="lab">Lab</option>
+          <option value="availability">Availability</option>
+          <option value="preference">Preference</option>
+          <option value="balance">Balance</option>
+          <option value="distribution">Distribution</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" rows="3"
+                  placeholder="Enter a clear description of the constraint..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Add Constraint
+      </button>
+    </form>
+  </div>
+
+  <!-- NATURAL LANGUAGE PARSER -->
+  <div class="card">
+    <div class="card-title">
+      <i class="bi bi-cpu-fill" style="margin-right:6px;color:var(--blue);"></i>Natural Language Constraint Parser
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
+      Type a scheduling constraint in plain English — the keyword classifier will parse and categorise it automatically.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Enter constraint in plain English</label>
+      <textarea id="nl-input" class="form-control" rows="4"
+                placeholder="e.g. No classes should be scheduled on Friday afternoon after 2PM&#10;or: Lecturers should not have more than 4 hours per day"></textarea>
+    </div>
+    <div class="flex gap-3 items-center">
+      <button id="nl-parse-btn" class="btn btn-primary">
+        <i class="bi bi-magic"></i> Parse &amp; Add
+      </button>
+      <span style="font-size:12px; color:var(--muted);">Keyword classification &mdash; no API required</span>
+    </div>
+
+    <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:8px; font-weight:600;">Example inputs:</div>
+      {% for ex in [
+        "No classes before 8AM or after 5PM",
+        "Lecturers should not teach more than 3 courses per day",
+        "All 100 level courses should be in the morning",
+        "Friday afternoons should be free for student activities",
+      ] %}
+      <div style="font-size:12px; color:var(--blue); cursor:pointer; margin-bottom:4px; display:flex; align-items:center; gap:4px;"
+           onclick="document.getElementById('nl-input').value='{{ ex }}'">
+        <i class="bi bi-arrow-right-short"></i> {{ ex }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

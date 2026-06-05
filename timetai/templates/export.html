@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Export{% endblock %}
+{% block page_title %}Export Timetable{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Export Timetable</h1>
+    <p>Download the generated timetable in your preferred format.</p>
+  </div>
+</div>
+
+{% if result.is_valid %}
+<div class="success-banner">
+  <i class="bi bi-check-circle-fill" style="font-size:28px;"></i>
+  <div>
+    <h3>Timetable Ready for Export</h3>
+    <p>{{ entries|length }} entries &mdash; 0 hard violations &mdash; fully constraint-satisfying timetable.</p>
+  </div>
+</div>
+{% elif entries %}
+<div class="warn-banner">
+  <i class="bi bi-exclamation-triangle-fill" style="font-size:28px;"></i>
+  <div>
+    <h3>Timetable Has {{ result.hard_violations|length }} Hard Violation(s)</h3>
+    <p>You can still export, but consider re-running generation to resolve violations first.</p>
+  </div>
+</div>
+{% else %}
+<div class="warn-banner">
+  <i class="bi bi-calendar-x" style="font-size:28px;"></i>
+  <div>
+    <h3>No Timetable Generated Yet</h3>
+    <p>Please upload data and run generation before exporting.</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- EXPORT BUTTONS -->
+<div class="export-grid">
+  <a href="{{ url_for('export.download_pdf') }}" class="export-btn pdf {{ '' if entries else 'disabled' }}"
+     {% if not entries %}onclick="return false;"{% endif %}>
+    <i class="bi bi-file-earmark-pdf-fill exp-icon"></i>
+    <span>PDF Report</span>
+    <span style="font-size:11px; font-weight:400; opacity:0.7;">ReportLab formatted</span>
+  </a>
+  <a href="{{ url_for('export.download_excel') }}" class="export-btn excel {{ '' if entries else 'disabled' }}"
+     {% if not entries %}onclick="return false;"{% endif %}>
+    <i class="bi bi-file-earmark-spreadsheet-fill exp-icon"></i>
+    <span>Excel (.xlsx)</span>
+    <span style="font-size:11px; font-weight:400; opacity:0.7;">With styled headers</span>
+  </a>
+  <a href="{{ url_for('export.download_csv') }}" class="export-btn csv {{ '' if entries else 'disabled' }}"
+     {% if not entries %}onclick="return false;"{% endif %}>
+    <i class="bi bi-filetype-csv exp-icon"></i>
+    <span>CSV File</span>
+    <span style="font-size:11px; font-weight:400; opacity:0.7;">Raw comma-separated</span>
+  </a>
+  <a href="javascript:window.print()" class="export-btn print">
+    <i class="bi bi-printer-fill exp-icon"></i>
+    <span>Print</span>
+    <span style="font-size:11px; font-weight:400; opacity:0.7;">Browser print dialog</span>
+  </a>
+</div>
+
+<!-- STATS ROW -->
+<div class="summary-row">
+  <div class="summary-card navy">
+    <i class="bi bi-calendar3" style="font-size:22px;color:var(--navy);margin-bottom:4px;"></i>
+    <div class="s-value">{{ entries|length }}</div>
+    <div class="s-label">Total Entries</div>
+  </div>
+  <div class="summary-card {{ 'green' if result.hard_violations|length == 0 else 'red' }}">
+    <i class="bi bi-shield-x" style="font-size:22px;margin-bottom:4px;color:{{ 'var(--green)' if result.hard_violations|length == 0 else 'var(--red)' }};"></i>
+    <div class="s-value">{{ result.hard_violations|length }}</div>
+    <div class="s-label">Hard Violations</div>
+  </div>
+  <div class="summary-card amber">
+    <i class="bi bi-exclamation-triangle" style="font-size:22px;color:var(--amber);margin-bottom:4px;"></i>
+    <div class="s-value">{{ result.soft_violations|length }}</div>
+    <div class="s-label">Soft Violations</div>
+  </div>
+  <div class="summary-card green">
+    <i class="bi bi-patch-check-fill" style="font-size:22px;color:var(--green);margin-bottom:4px;"></i>
+    <div class="s-value">{{ result.hard_satisfied }}</div>
+    <div class="s-label">Hard Rules OK</div>
+  </div>
+</div>
+
+{% if entries %}
+<div class="card">
+  <div class="card-title"><i class="bi bi-eye-fill" style="margin-right:6px;color:var(--navy);"></i>Timetable Preview (first 20 entries)</div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Course</th><th>Title</th><th>Lecturer</th><th>Room</th><th>Group</th><th>Day</th><th>Time</th><th>Type</th></tr>
+      </thead>
+      <tbody>
+        {% for e in entries[:20] %}
+        <tr>
+          <td><strong>{{ e.course_code }}</strong></td>
+          <td>{{ e.course_title }}</td>
+          <td>{{ e.lecturer }}</td>
+          <td>{{ e.room }}</td>
+          <td>{{ e.student_group }}</td>
+          <td>{{ e.day }}</td>
+          <td>{{ e.start_time }}&ndash;{{ e.end_time }}</td>
+          <td><span class="badge {{ 'badge-blue' if e.course_type == 'LAB' else 'badge-navy' }}">{{ e.course_type }}</span></td>
+        </tr>
+        {% endfor %}
+        {% if entries|length > 20 %}
+        <tr>
+          <td colspan="8" style="text-align:center;color:var(--muted);font-style:italic;">
+            <i class="bi bi-three-dots"></i> and {{ entries|length - 20 }} more entries &mdash; download the full export to see all.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if last_session %}
+<div class="card mt-6" style="border-left: 4px solid var(--navy);">
+  <div class="card-title"><i class="bi bi-info-circle-fill" style="margin-right:6px;color:var(--navy);"></i>Last Generation Session</div>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; font-size:13px;">
+    <div><span style="color:var(--muted);">Status:</span> <strong>{{ last_session.status }}</strong></div>
+    <div><span style="color:var(--muted);">Iterations:</span> <strong>{{ last_session.iteration_count }}</strong></div>
+    <div><span style="color:var(--muted);">Time:</span> <strong>{{ "%.2f"|format(last_session.total_time_seconds) }}s</strong></div>
+    <div><span style="color:var(--muted);">Department:</span> <strong>{{ last_session.department }}</strong></div>
+    <div><span style="color:var(--muted);">Semester:</span> <strong>{{ last_session.semester }}</strong></div>
+    <div><span style="color:var(--muted);">Generated:</span> <strong>{{ last_session.created_at.strftime('%d %b %Y %H:%M') }}</strong></div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

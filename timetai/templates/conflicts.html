@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Conflict Report{% endblock %}
+{% block page_title %}Conflict Detection Report{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Conflict Detection Report</h1>
+    <p>Constraint satisfaction analysis for the latest generated timetable.</p>
+  </div>
+  <div class="flex gap-3">
+    <a href="{{ url_for('generate.generate_page') }}" class="btn btn-outline btn-sm">
+      <i class="bi bi-arrow-repeat"></i> Re-run Generation
+    </a>
+    {% if result.hard_violations|length == 0 %}
+      <a href="{{ url_for('export.export_page') }}" class="btn btn-success btn-sm">
+        <i class="bi bi-download"></i> Export Timetable
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- SUMMARY CARDS -->
+<div class="summary-row">
+  <div class="summary-card red">
+    <i class="bi bi-x-circle-fill" style="font-size:24px;color:var(--red);margin-bottom:6px;"></i>
+    <div class="s-value">{{ result.hard_violations|length }}</div>
+    <div class="s-label">Hard Violations</div>
+  </div>
+  <div class="summary-card amber">
+    <i class="bi bi-exclamation-triangle-fill" style="font-size:24px;color:var(--amber);margin-bottom:6px;"></i>
+    <div class="s-value">{{ result.soft_violations|length }}</div>
+    <div class="s-label">Soft Violations</div>
+  </div>
+  <div class="summary-card green">
+    <i class="bi bi-check-circle-fill" style="font-size:24px;color:var(--green);margin-bottom:6px;"></i>
+    <div class="s-value">{{ result.hard_satisfied }}</div>
+    <div class="s-label">Hard Rules Satisfied</div>
+  </div>
+  <div class="summary-card navy">
+    <i class="bi bi-patch-check-fill" style="font-size:24px;color:var(--navy);margin-bottom:6px;"></i>
+    <div class="s-value">{{ result.soft_satisfied }}</div>
+    <div class="s-label">Soft Prefs Satisfied</div>
+  </div>
+</div>
+
+{% if result.is_valid %}
+<div class="success-banner">
+  <i class="bi bi-check-circle-fill" style="font-size:28px;"></i>
+  <div>
+    <h3>All Hard Constraints Satisfied</h3>
+    <p>The generated timetable contains no hard violations. {{ result.soft_violations|length }} soft preference(s) remain &mdash; these are advisory only.</p>
+  </div>
+</div>
+{% else %}
+<div class="warn-banner">
+  <i class="bi bi-exclamation-triangle-fill" style="font-size:28px;"></i>
+  <div>
+    <h3>Hard Constraint Violations Detected</h3>
+    <p>{{ result.hard_violations|length }} hard constraint(s) were violated. Consider re-running the generation to resolve these.</p>
+  </div>
+</div>
+{% endif %}
+
+{% if result.hard_violations %}
+<div class="card mb-6">
+  <div class="card-title" style="color: var(--red);">
+    <i class="bi bi-x-circle-fill" style="margin-right:6px;"></i>Hard Violations ({{ result.hard_violations|length }})
+  </div>
+  {% for v in result.hard_violations %}
+  <div class="violation-card HARD">
+    <div class="flex justify-between items-center" style="margin-bottom:4px;">
+      <div class="v-title">{{ v.title }}</div>
+      <span class="badge badge-hard">HARD</span>
+    </div>
+    <div class="v-desc">{{ v.description }}</div>
+    <div class="v-fix"><i class="bi bi-lightbulb-fill" style="color:var(--amber);"></i> {{ v.fix }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if result.soft_violations %}
+<div class="card mb-6">
+  <div class="card-title" style="color: var(--orange);">
+    <i class="bi bi-exclamation-triangle-fill" style="margin-right:6px;"></i>Soft Violations ({{ result.soft_violations|length }})
+  </div>
+  {% for v in result.soft_violations %}
+  <div class="violation-card SOFT">
+    <div class="flex justify-between items-center" style="margin-bottom:4px;">
+      <div class="v-title">{{ v.title }}</div>
+      <span class="badge badge-soft">SOFT</span>
+    </div>
+    <div class="v-desc">{{ v.description }}</div>
+    <div class="v-fix"><i class="bi bi-lightbulb-fill" style="color:var(--amber);"></i> {{ v.fix }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if not result.hard_violations and not result.soft_violations %}
+<div class="card" style="text-align:center; padding: 48px 40px; border-color: var(--green);">
+  <i class="bi bi-trophy-fill" style="font-size:48px;color:var(--amber);display:block;margin-bottom:16px;"></i>
+  <h2 style="font-size: 18px; color: var(--green); margin-bottom: 8px;">Zero Violations!</h2>
+  <p style="color: var(--muted);">The timetable fully satisfies all hard constraints and soft preferences.</p>
+</div>
+{% endif %}
+
+<div class="card mt-6">
+  <div class="card-title"><i class="bi bi-clipboard2-data-fill" style="margin-right:6px;color:var(--navy);"></i>Constraint Satisfaction Summary</div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Constraint Type</th><th>Category</th><th>Status</th><th>Violations</th></tr>
+      </thead>
+      <tbody>
+        {% set checks = [
+          ("HARD","Room Double-Booking","Room Double-Booking"),
+          ("HARD","Lecturer Double-Booking","Lecturer Double-Booking"),
+          ("HARD","Student Group Clash","Student Group Clash"),
+          ("HARD","Lab in Wrong Room","Lab in Wrong Room"),
+          ("SOFT","Outside Preferred Hours","Outside Preferred Hours"),
+          ("SOFT","Excessive Consecutive Hours","Excessive Consecutive Hours"),
+        ] %}
+        {% for ctype, category, title in checks %}
+          {% if ctype == "HARD" %}
+            {% set violations = result.hard_violations|selectattr('title','equalto', title)|list %}
+          {% else %}
+            {% set violations = result.soft_violations|selectattr('title','equalto', title)|list %}
+          {% endif %}
+          {% set ok = violations|length == 0 %}
+        <tr>
+          <td><span class="badge badge-{{ 'hard' if ctype == 'HARD' else 'soft' }}">{{ ctype }}</span></td>
+          <td>{{ category }}</td>
+          <td style="color:{{ 'var(--green)' if ok else ('var(--red)' if ctype == 'HARD' else 'var(--amber)') }}">
+            {% if ok %}<i class="bi bi-check-circle-fill"></i> Satisfied
+            {% elif ctype == 'HARD' %}<i class="bi bi-x-circle-fill"></i> Violated
+            {% else %}<i class="bi bi-exclamation-circle-fill"></i> Advisory{% endif %}
+          </td>
+          <td>{{ violations|length }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

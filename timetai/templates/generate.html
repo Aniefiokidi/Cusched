@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block title %}Generate Timetable{% endblock %}
+{% block page_title %}Timetable Generation{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Generate Timetable</h1>
+    <p>CSP Backtracking Algorithm &mdash; generates for any level (100&ndash;500) or department in the database.</p>
+  </div>
+</div>
+
+<!-- STEPS -->
+<div class="card mb-6">
+  <div class="steps">
+    {% for label in ["Load Data", "Build Domains", "Backtrack", "Validate", "Refine", "Complete"] %}
+    <div class="step">
+      <div class="step-circle">{{ loop.index }}</div>
+      <div class="step-label">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="two-col mb-6">
+  <!-- SETTINGS -->
+  <div class="card">
+    <div class="card-title">
+      <i class="bi bi-gear-fill" style="margin-right:6px;color:var(--navy);"></i>Generation Settings
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Department</label>
+      <select id="dept-sel" class="form-control">
+        <option value="ALL">All Departments</option>
+        {% for dept in departments %}
+        <option value="{{ dept }}">{{ dept }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Level</label>
+      <select id="level-sel" class="form-control">
+        <option value="ALL">All Levels</option>
+        {% for lvl in levels %}
+        <option value="{{ lvl }}">{{ lvl }} Level</option>
+        {% endfor %}
+      </select>
+      <span style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">
+        <i class="bi bi-info-circle"></i>
+        Select a specific level to generate timetable for only those courses
+      </span>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Semester</label>
+      <select id="semester-sel" class="form-control">
+        <option value="ALPHA">Alpha Semester (2025&ndash;2026)</option>
+        <option value="OMEGA">Omega Semester (2025&ndash;2026)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Max Solver Attempts</label>
+      <input type="number" class="form-control" value="5" disabled>
+      <span style="font-size:11px;color:var(--muted);">Up to 5 backtracking retries with different seeds</span>
+    </div>
+
+    <!-- COURSE COUNT PREVIEW -->
+    <div id="course-preview" style="background:#F0F4F8;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--navy);">
+      <i class="bi bi-journal-bookmark-fill" style="margin-right:6px;"></i>
+      <strong id="course-count">{{ courses_count if courses_count else '—' }}</strong> courses will be scheduled
+    </div>
+
+    <button id="start-gen-btn" class="btn btn-primary btn-lg">
+      <i class="bi bi-play-circle-fill"></i> Start Generation
+    </button>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="card">
+    <div class="card-title">
+      <i class="bi bi-info-circle-fill" style="margin-right:6px;color:var(--blue);"></i>How the CSP Solver Works
+    </div>
+    <div style="font-size:13px;line-height:1.8;">
+      <div style="margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;">
+        <i class="bi bi-1-circle-fill" style="color:var(--blue);font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+        <span><strong>Dynamic Assignment</strong> &mdash; Courses are automatically matched to lecturers and student groups by department and level. No manual setup needed.</span>
+      </div>
+      <div style="margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;">
+        <i class="bi bi-2-circle-fill" style="color:var(--blue);font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+        <span><strong>MRV Heuristic</strong> &mdash; The most constrained courses are scheduled first, drastically reducing backtracking depth.</span>
+      </div>
+      <div style="margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;">
+        <i class="bi bi-3-circle-fill" style="color:var(--blue);font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+        <span><strong>Backtracking</strong> &mdash; Each course gets a room, day, and time slot; assignments that violate any hard constraint are immediately rejected.</span>
+      </div>
+      <div style="margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;">
+        <i class="bi bi-4-circle-fill" style="color:var(--blue);font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+        <span><strong>Level Filtering</strong> &mdash; Select "100 Level" to generate only 100-level courses, or "All Levels" for the complete timetable.</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+        <span><strong>Validation</strong> &mdash; All hard constraints (room clashes, lecturer double-bookings, group conflicts) are verified after each attempt.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TERMINAL -->
+<div class="card">
+  <div class="card-title flex justify-between items-center">
+    <span><i class="bi bi-terminal-fill" style="margin-right:6px;color:var(--navy);"></i>Solver Log</span>
+    <span id="gen-status"></span>
+  </div>
+  <div class="terminal" id="gen-terminal">
+[INFO] Ready. Configure settings above and click "Start Generation".
+[INFO] The solver will automatically assign lecturers and rooms based on your selection.
+  </div>
+</div>
+
+<!-- PREVIOUS SESSIONS -->
+{% if sessions %}
+<div class="card mt-6">
+  <div class="card-title"><i class="bi bi-table" style="margin-right:6px;color:var(--navy);"></i>Generation History</div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Dept</th><th>Level</th><th>Semester</th><th>Status</th>
+          <th>Iterations</th><th>Hard Violations</th><th>Soft Violations</th>
+          <th>Time (s)</th><th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sessions %}
+        <tr>
+          <td>{{ s.id }}</td>
+          <td>{{ s.department }}</td>
+          <td>
+            {% if s.level_filter and s.level_filter != 'ALL' %}
+              <span class="badge badge-navy">{{ s.level_filter }}L</span>
+            {% else %}
+              <span class="badge badge-blue">All</span>
+            {% endif %}
+          </td>
+          <td>{{ s.semester }}</td>
+          <td>
+            <span class="badge badge-{{ 'green' if s.status == 'COMPLETE' else 'hard' if s.status == 'FAILED' else 'blue' }}">
+              {{ s.status }}
+            </span>
+          </td>
+          <td>{{ s.iteration_count }}</td>
+          <td>
+            <span style="color:{{ 'var(--green)' if s.hard_violations == 0 else 'var(--red)' }};font-weight:600;">
+              {{ s.hard_violations }}
+            </span>
+          </td>
+          <td>{{ s.soft_violations }}</td>
+          <td>{{ "%.2f"|format(s.total_time_seconds) }}</td>
+          <td style="color:var(--muted);">{{ s.created_at.strftime('%d %b %Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Update course count preview when filters change
+(function() {
+  var deptSel  = document.getElementById('dept-sel');
+  var levelSel = document.getElementById('level-sel');
+  var countEl  = document.getElementById('course-count');
+
+  function updateCount() {
+    var dept  = deptSel ? deptSel.value : 'ALL';
+    var level = levelSel ? levelSel.value : 'ALL';
+    fetch('/generate/course-count?dept=' + dept + '&level=' + level)
+      .then(function(r) { return r.json(); })
+      .then(function(d) { if (countEl) countEl.textContent = d.count; })
+      .catch(function() {});
+  }
+
+  if (deptSel)  deptSel.addEventListener('change', updateCount);
+  if (levelSel) levelSel.addEventListener('change', updateCount);
+  updateCount();
+})();
+
+// Override the generation start to send level and dept
+(function() {
+  var origStart = document.getElementById('start-gen-btn');
+  if (!origStart) return;
+
+  origStart.addEventListener('click', function() {
+    var semester = document.getElementById('semester-sel')?.value || 'ALPHA';
+    var dept     = document.getElementById('dept-sel')?.value    || 'ALL';
+    var level    = document.getElementById('level-sel')?.value   || 'ALL';
+    var terminal = document.getElementById('gen-terminal');
+    var statusBox = document.getElementById('gen-status');
+
+    if (terminal) terminal.textContent = '[INFO] Initialising generation...\n';
+    origStart.disabled = true;
+    origStart.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
+    setStep(1);
+
+    var fd = new FormData();
+    fd.append('semester', semester);
+    fd.append('department', dept);
+    fd.append('level_filter', level);
+
+    fetch('/generate/start', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.success) {
+          alert('Failed to start generation.');
+          origStart.disabled = false;
+          origStart.innerHTML = '<i class="bi bi-play-circle-fill"></i> Start Generation';
+          return;
+        }
+        var sid = data.session_id;
+        var poll = setInterval(function() {
+          fetch('/generate/status/' + sid)
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+              if (terminal) terminal.textContent = d.log_output || '';
+              if (terminal) terminal.scrollTop = terminal.scrollHeight;
+
+              var step = 1;
+              if (d.status === 'GENERATING')  step = 2;
+              if (d.status === 'VALIDATING')  step = 4;
+              if (d.status === 'COMPLETE')    step = 6;
+              if (d.status === 'FAILED')      step = 6;
+              setStep(step);
+
+              if (d.status === 'COMPLETE' || d.status === 'FAILED') {
+                clearInterval(poll);
+                origStart.disabled = false;
+                origStart.innerHTML = '<i class="bi bi-arrow-repeat"></i> Re-run Generation';
+                if (statusBox) {
+                  statusBox.innerHTML = d.status === 'COMPLETE'
+                    ? '<a href="/timetable" class="btn btn-success btn-sm"><i class="bi bi-calendar-check-fill"></i> View Timetable</a>'
+                    : '<span style="color:var(--red);font-size:13px;"><i class="bi bi-x-circle-fill"></i> Generation failed</span>';
+                }
+              }
+            });
+        }, 1500);
+      });
+  });
+
+  function setStep(n) {
+    document.querySelectorAll('.step').forEach(function(el, i) {
+      el.classList.remove('active', 'done');
+      if (i + 1 < n) el.classList.add('done');
+      else if (i + 1 === n) el.classList.add('active');
+    });
+  }
+})();
+</script>
+{% endblock %}

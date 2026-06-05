@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CovenantSched{% endblock %} — Covenant University Scheduling System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>Covenant<span>Sched</span></h2>
+      <p>Covenant University &bull; CIS Dept</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Overview</div>
+      <a href="{{ url_for('main.dashboard') }}" class="{{ 'active' if request.endpoint == 'main.dashboard' else '' }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 3H3v7h7V3zm11 0h-7v7h7V3zm0 11h-7v7h7v-7zm-11 0H3v7h7v-7z"/></svg>
+        Dashboard
+      </a>
+      <div class="nav-section">Data Setup</div>
+      <a href="{{ url_for('upload.upload_page') }}" class="{{ 'active' if request.endpoint == 'upload.upload_page' else '' }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+        Upload Data
+      </a>
+      <a href="{{ url_for('constraints.constraints_page') }}" class="{{ 'active' if request.endpoint == 'constraints.constraints_page' else '' }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        Constraints
+      </a>
+      <div class="nav-section">Generation</div>
+      <a href="{{ url_for('generate.generate_page') }}" class="{{ 'active' if request.endpoint == 'generate.generate_page' else '' }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+        Generate Timetable
+      </a>
+      <div class="nav-section">Results</div>
+      <a href="{{ url_for('export.timetable_page') }}" class="{{ 'active' if request.endpoint == 'export.timetable_page' else '' }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+        View Timetable
+      </a>
+      <a href="{{ url_for('export.conflicts_page') }}" class="{{ 'active' if request.endpoint == 'export.conflicts_page' else '' }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21L12 2l11 19H1zm11-3v2h-2v-2h2zm0-8v6h-2v-6h2z"/></svg>
+        Conflict Report
+      </a>
+      <a href="{{ url_for('export.export_page') }}" class="{{ 'active' if request.endpoint == 'export.export_page' else '' }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/></svg>
+        Export
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      CovenantSched v1.0 &bull; FYP 2025
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-title">{% block page_title %}CovenantSched{% endblock %}</div>
+      <div class="topbar-right">
+        <div class="admin-badge">
+          <div class="admin-avatar">A</div>
+          <span>{{ current_user.email if current_user.is_authenticated else 'Admin' }}</span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="btn-logout">Logout</a>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main class="page-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

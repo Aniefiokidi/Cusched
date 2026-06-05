@@ -1,0 +1,38 @@
+course_code,course_title,credit_units,course_type,department,level
+COS111,Introduction to Computing Sciences,3,LECTURE,CIS,100
+CSC112,Computer Application Packages I,1,LAB,CIS,100
+CSC231,Linear Algebra I,2,LECTURE,CIS,100
+CSC233,Programming with C++,3,LECTURE,CIS,100
+CSC211,Computer Programming I,3,LECTURE,CIS,200
+IFT211,Digital Logic Design,2,LECTURE,CIS,200
+SEN211,Introduction to Software Engineering,2,LECTURE,CIS,200
+CYB211,Introduction to Cybersecurity and Strategy,2,LECTURE,CIS,200
+CSC231,Data Structures and Algorithms,2,LECTURE,CIS,200
+INS217,Introduction to Information Systems,2,LECTURE,MIS,200
+COS313,Computer Programming II (Java),3,LECTURE,CIS,300
+CSC313,Object Oriented Programming,2,LAB,CIS,300
+CSC314,Theory of Computing,2,LECTURE,CIS,300
+CSC317,System Analysis and Design,2,LECTURE,CIS,300
+CSC331,Artificial Intelligence,2,LECTURE,CIS,300
+CSC332,Data Structures,3,LECTURE,CIS,300
+CSC334,Python Programming Language II,2,LECTURE,CIS,300
+CSC335,Computer Science Innovation and New Technologies,2,LECTURE,CIS,300
+INS311,Business Process Management,2,LECTURE,MIS,300
+INS312,Information Systems Innovation and New Technologies,2,LECTURE,MIS,300
+INS313,E-Business Systems Development,2,LECTURE,MIS,300
+CSC411,Software Engineering,3,LECTURE,CIS,400
+CSC413,Algorithms and Complexity Analysis,3,LECTURE,CIS,400
+CSC415,Artificial Intelligence,3,LECTURE,CIS,400
+CSC416,Discrete Structure,3,LECTURE,CIS,400
+CSC431,Computational Science and Numerical Method,3,LECTURE,CIS,400
+CSC433,Computer Graphics and Animation,2,LECTURE,CIS,400
+MIS412,Knowledge Management,2,LECTURE,MIS,400
+MIS413,System Accounting,2,LECTURE,MIS,400
+MIS415,Project Management,2,LECTURE,MIS,400
+MIS418,E-Commerce Technology,3,LECTURE,MIS,400
+CSC511,Advanced Machine Learning and Deep Networks,3,LECTURE,CIS,500
+CSC513,Research Methods in Computer Science,2,LECTURE,CIS,500
+CSC515,Advanced Software Engineering,3,LECTURE,CIS,500
+CSC517,Distributed Computing Systems,2,LECTURE,CIS,500
+MIS511,Advanced Information Systems Management,2,LECTURE,MIS,500
+MIS513,Research Project Seminar,2,LECTURE,MIS,500

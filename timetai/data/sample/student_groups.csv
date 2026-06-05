@@ -1,0 +1,11 @@
+group_name,programme,level,student_count
+100L-CS,Computer Science,100,350
+100L-MIS,Management Information Systems,100,280
+200L-CS,Computer Science,200,280
+200L-MIS,Management Information Systems,200,150
+300L-CS,Computer Science,300,220
+300L-MIS,Management Information Systems,300,80
+400L-CS,Computer Science,400,200
+400L-MIS,Management Information Systems,400,100
+500L-CS,Computer Science (Postgraduate),500,35
+500L-MIS,Management Information Systems (Postgraduate),500,20

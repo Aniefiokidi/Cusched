@@ -1,0 +1,9 @@
+room_name,room_type,capacity,building
+LT1,LECTURE_HALL,800,CST Main Block
+LT2,LECTURE_HALL,600,CST Main Block
+HALL201,LECTURE_HALL,300,Faculty of Sciences Block
+HALL202,LECTURE_HALL,300,Faculty of Sciences Block
+HALL203,LECTURE_HALL,200,Faculty of Sciences Block
+HALL307,LECTURE_HALL,150,Faculty of Sciences Block
+HALL308,LECTURE_HALL,120,Faculty of Sciences Block
+COMPUTER LAB,LAB,100,CST Main Block

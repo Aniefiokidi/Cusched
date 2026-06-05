@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — CovenantSched</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <div style="margin-bottom:6px;">
+          <i class="bi bi-calendar2-week-fill" style="font-size:36px;color:var(--navy);"></i>
+        </div>
+        <h1>Covenant<span>Sched</span></h1>
+        <p>Constraint-Aware Timetable Scheduling System</p>
+        <p style="margin-top:4px; font-size:11px; color:#9CA3AF;">Covenant University &bull; Dept. of Computer &amp; Information Sciences</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}" style="margin-bottom:14px;">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <h2>Administrator Login</h2>
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" name="email" class="form-control"
+                 placeholder="admin@timetai.ng" required autofocus>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control"
+                 placeholder="••••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" style="margin-top:8px; justify-content:center;">
+          Sign In to CovenantSched
+        </button>
+      </form>
+      <p style="text-align:center; margin-top:16px; font-size:11px; color:#9CA3AF;">
+        Default: admin@timetai.ng &nbsp;/&nbsp; Admin@TimetAI2025 &nbsp;&mdash;&nbsp; CovenantSched v1.0
+      </p>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
