@@ -3,9 +3,17 @@ CovenantSched — Dynamic CSP Backtracking Timetable Solver
 Works for any level (100–500), any department, any courses in the database.
 No hardcoded course-to-lecturer mappings — all assignments are computed dynamically.
 """
+import os
 import time
 import random
 from collections import defaultdict
+
+try:
+    from google import genai as _genai_module
+    _GENAI_AVAILABLE = True
+except ImportError:
+    _GENAI_AVAILABLE = False
+
 from models.models import (
     db, Course, Room, Lecturer, StudentGroup, Constraint,
     TimetableEntry, GenerationSession,
@@ -314,6 +322,14 @@ class CSPTimetableSolver(CSPTimetableSolver):
         session.log_output += f"\n[DONE] Saved {saved} entries in {elapsed:.2f}s\n"
         db.session.commit()
 
+        ai_note = GeminiTimetableExplainer().explain(
+            final_entries, session.hard_violations, session.soft_violations,
+            session.iteration_count, elapsed,
+        )
+        if ai_note:
+            session.log_output += ai_note
+            db.session.commit()
+
         return {
             "session_id": session_id,
             "iterations": session.iteration_count,
@@ -323,6 +339,54 @@ class CSPTimetableSolver(CSPTimetableSolver):
             "is_valid": result.get("is_valid", False),
             "elapsed": elapsed,
         }
+
+
+class GeminiTimetableExplainer:
+    """Calls Google Gemini (free tier) to produce a plain-English analysis after CSP scheduling."""
+
+    MODEL = "gemini-flash-lite-latest"
+
+    def __init__(self):
+        api_key = os.getenv("GEMINI_API_KEY")
+        self.enabled = _GENAI_AVAILABLE and bool(api_key)
+        if self.enabled:
+            self._client = _genai_module.Client(api_key=api_key)
+
+    def explain(self, entries: list, hard_violations: int, soft_violations: int,
+                iteration_count: int, elapsed: float) -> str:
+        if not self.enabled or not entries:
+            return ""
+
+        from collections import Counter
+        days = Counter(e["day"] for e in entries)
+        times = Counter(e["start_time"] for e in entries)
+        unique_lecturers = len({e["lecturer"] for e in entries})
+        unique_rooms = len({e["room"] for e in entries})
+
+        day_line = ", ".join(f"{d}: {n}" for d, n in sorted(days.items()))
+        peak_slots = ", ".join(f"{t} ({n})" for t, n in times.most_common(3))
+
+        prompt = (
+            "You are a concise academic timetable analyst.\n\n"
+            f"Results: {len(entries)} courses scheduled across {iteration_count} "
+            f"CSP iteration(s) in {elapsed:.1f}s.\n"
+            f"Hard violations: {hard_violations} | Soft violations: {soft_violations}\n"
+            f"Daily distribution: {day_line}\n"
+            f"Peak time slots: {peak_slots}\n"
+            f"Unique lecturers used: {unique_lecturers} | Unique rooms used: {unique_rooms}\n\n"
+            "In exactly 3 sentences provide: (1) overall quality assessment, "
+            "(2) any concern about violations or day distribution, "
+            "(3) one specific actionable improvement. Be concise and practical."
+        )
+
+        try:
+            response = self._client.models.generate_content(
+                model=self.MODEL,
+                contents=prompt,
+            )
+            return f"\n[AI Analysis - Gemini]\n{response.text.strip()}\n"
+        except Exception as exc:
+            return f"\n[AI Analysis unavailable: {exc}]\n"
 
 
 # Public interface (keeps routes/generate.py unchanged)
