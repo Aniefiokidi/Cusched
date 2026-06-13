@@ -22,6 +22,12 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "timetai-dev-secret-2025")
     SQLALCHEMY_DATABASE_URI = _db_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Allow the background generation thread to use the SQLite connection
+    SQLALCHEMY_ENGINE_OPTIONS = (
+        {"connect_args": {"check_same_thread": False}}
+        if not os.getenv("DATABASE_URL")
+        else {}
+    )
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
     MAX_ITERATIONS = 5
     UPLOAD_FOLDER = "/tmp/uploads" if _on_vercel else os.path.join(os.path.dirname(__file__), "data", "uploads")

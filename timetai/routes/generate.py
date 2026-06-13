@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, jsonify
+import threading
+from flask import Blueprint, render_template, request, jsonify, current_app
 from flask_login import login_required
 from models.models import db, GenerationSession, TimetableEntry, Course
 from services.llm_service import LLMTimetableService
@@ -35,7 +36,13 @@ def start_generation():
     db.session.commit()
     session_id = gs.id
 
-    LLMTimetableService().generate_timetable(session_id)
+    app = current_app._get_current_object()
+
+    def _run():
+        with app.app_context():
+            LLMTimetableService().generate_timetable(session_id)
+
+    threading.Thread(target=_run, daemon=True).start()
     return jsonify({"success": True, "session_id": session_id})
 
 

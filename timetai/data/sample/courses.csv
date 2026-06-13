@@ -1,7 +1,7 @@
 course_code,course_title,credit_units,course_type,department,level
 COS111,Introduction to Computing Sciences,3,LECTURE,CIS,100
 CSC112,Computer Application Packages I,1,LAB,CIS,100
-CSC231,Linear Algebra I,2,LECTURE,CIS,100
+MTH111,Linear Algebra I,2,LECTURE,CIS,100
 CSC233,Programming with C++,3,LECTURE,CIS,100
 CSC211,Computer Programming I,3,LECTURE,CIS,200
 IFT211,Digital Logic Design,2,LECTURE,CIS,200

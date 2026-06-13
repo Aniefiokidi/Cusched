@@ -6,9 +6,12 @@
 <div class="page-header">
   <div>
     <h1>Upload Scheduling Data</h1>
-    <p>Upload CSV files for courses, rooms, lecturers, and student groups to begin.</p>
+    <p>Upload a single combined CSV file — the system extracts courses, rooms, lecturers, and student groups automatically.</p>
   </div>
   <div class="flex gap-3">
+    <button id="sample-btn" class="btn btn-outline" onclick="loadSampleData()">
+      <i class="bi bi-database-fill-up"></i> Load Sample Data
+    </button>
     <button id="proceed-btn" class="btn btn-primary" disabled onclick="window.location='/constraints'">
       <i class="bi bi-arrow-right-circle-fill"></i> Proceed to Constraints
     </button>
@@ -24,57 +27,69 @@
     ("groups",    "bi-people-fill",             "#E65100", "Student Groups", counts.groups),
   ] %}
   {% for key, icon, color, label, count in items %}
-  <div class="summary-card {{ 'green' if count > 0 else 'navy' }}">
+  <div class="summary-card {{ 'green' if count > 0 else 'navy' }}" id="stat-{{ key }}">
     <i class="bi {{ icon }}" style="font-size:26px; color:{{ color }};"></i>
-    <div class="s-value">{{ count }}</div>
+    <div class="s-value" id="stat-val-{{ key }}">{{ count }}</div>
     <div class="s-label">{{ label }} loaded</div>
   </div>
   {% endfor %}
 </div>
 
-<!-- UPLOAD PANELS -->
-<div class="two-col">
-  {% set panels = [
-    ("courses",   "bi-journal-bookmark-fill", "#1A3C5E", "courses.csv",        "Courses",       "course_code, course_title, credit_units, course_type, department, level"),
-    ("rooms",     "bi-building-fill",          "#2E7D32", "rooms.csv",          "Rooms",         "room_name, room_type, capacity, building"),
-    ("lecturers", "bi-person-workspace",        "#2E6DA4", "lecturers.csv",      "Lecturers",     "name, email, department, specialisation, availability"),
-    ("groups",    "bi-people-fill",             "#E65100", "student_groups.csv", "Student Groups","group_name, programme, level, student_count"),
-  ] %}
-  {% for key, icon, color, fname, label, cols in panels %}
+<!-- SINGLE UPLOAD PANEL -->
+<div style="max-width:640px; margin:0 auto;">
   <div class="card">
     <div class="card-title">
-      <i class="bi {{ icon }}" style="color:{{ color }};margin-right:6px;"></i>{{ label }}
+      <i class="bi bi-file-earmark-spreadsheet-fill" style="color:#1A3C5E;margin-right:6px;"></i>
+      Combined Dataset File
     </div>
-    <div class="drop-zone" data-file-type="{{ key }}" id="zone-{{ key }}">
-      <input type="file" accept=".csv" style="display:none" id="file-{{ key }}">
-      <i class="bi bi-folder2-open" style="font-size:40px;color:var(--blue);display:block;margin-bottom:10px;"></i>
-      <h3>Drop {{ fname }} here</h3>
-      <p>or click to browse &mdash; CSV only</p>
+
+    <div class="drop-zone" id="combined-zone" style="padding:40px 20px;">
+      <input type="file" accept=".csv" style="display:none" id="file-combined">
+      <i class="bi bi-cloud-upload-fill" style="font-size:48px;color:var(--blue);display:block;margin-bottom:12px;"></i>
+      <h3 style="margin:0 0 6px;">Drop your CSV here</h3>
+      <p style="margin:0; color:var(--muted); font-size:13px;">or click to browse &mdash; CSV only</p>
     </div>
-    <div class="upload-item" id="upload-item-{{ key }}" style="margin-top:10px; {{ 'border-color: var(--green)' if counts[key] > 0 else '' }}">
-      <i class="bi bi-file-earmark-spreadsheet" style="font-size:24px; color:{{ color }};"></i>
+
+    <div class="upload-item" id="upload-item-combined" style="margin-top:12px;">
+      <i class="bi bi-file-earmark-spreadsheet" style="font-size:24px; color:#1A3C5E;"></i>
       <div class="file-info">
-        <div class="file-name">{{ fname }}</div>
-        <div class="file-size">Required: {{ cols }}</div>
+        <div class="file-name" id="combined-filename">No file selected</div>
+        <div class="file-size" id="combined-info">
+          Required columns: <code>course, lecturer, students, room, capacity, level</code>
+        </div>
       </div>
-      <div class="file-status {{ 'ok' if counts[key] > 0 else '' }}">
-        {% if counts[key] > 0 %}<i class="bi bi-check-circle-fill"></i> {{ counts[key] }} records{% else %}Not uploaded{% endif %}
+      <div class="file-status" id="combined-status">Not uploaded</div>
+    </div>
+
+    <!-- breakdown shown after upload -->
+    <div id="breakdown" style="display:none; margin-top:14px; padding:12px 14px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+      <div style="font-size:12px; font-weight:600; color:var(--navy); margin-bottom:8px;">Extracted from file:</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:13px;">
+        <span><i class="bi bi-journal-bookmark-fill" style="color:#1A3C5E;"></i> <span id="bd-courses">0</span> courses</span>
+        <span><i class="bi bi-building-fill" style="color:#2E7D32;"></i> <span id="bd-rooms">0</span> rooms</span>
+        <span><i class="bi bi-person-workspace" style="color:#2E6DA4;"></i> <span id="bd-lecturers">0</span> lecturers</span>
+        <span><i class="bi bi-people-fill" style="color:#E65100;"></i> <span id="bd-groups">0</span> student groups</span>
       </div>
     </div>
   </div>
-  {% endfor %}
-</div>
 
-<!-- SAMPLE DATA NOTE -->
-<div class="card mt-6" style="border-left: 4px solid var(--blue);">
-  <div class="flex gap-3 items-center">
-    <i class="bi bi-lightbulb-fill" style="font-size:22px;color:var(--amber);flex-shrink:0;"></i>
-    <div>
-      <strong style="font-size:13px; color:var(--navy);">Sample Data Available</strong>
-      <p style="font-size:12px; color:var(--muted); margin-top:2px;">
-        Use the pre-loaded Covenant University CIS Department datasets in <code>data/sample/</code>:
-        courses.csv, rooms.csv, lecturers.csv, student_groups.csv
-      </p>
+  <!-- FORMAT GUIDE -->
+  <div class="card mt-6" style="border-left: 4px solid var(--blue);">
+    <div class="flex gap-3 items-center">
+      <i class="bi bi-lightbulb-fill" style="font-size:22px;color:var(--amber);flex-shrink:0;"></i>
+      <div>
+        <strong style="font-size:13px; color:var(--navy);">Expected File Format</strong>
+        <p style="font-size:12px; color:var(--muted); margin-top:4px; line-height:1.6;">
+          Your CSV must include these columns (order doesn't matter):<br>
+          <code>course</code> &mdash; course code &nbsp;|&nbsp;
+          <code>lecturer</code> &mdash; lecturer name &nbsp;|&nbsp;
+          <code>students</code> &mdash; enrolment count<br>
+          <code>room</code> or <code>venue</code> &mdash; room name &nbsp;|&nbsp;
+          <code>capacity</code> &mdash; room capacity &nbsp;|&nbsp;
+          <code>level</code> &mdash; student level (100 / 200 / 300 / 400 / 500)<br>
+          <em>Optional:</em> <code>Day</code>, <code>Hour</code> — used to populate lecturer availability.
+        </p>
+      </div>
     </div>
   </div>
 </div>
@@ -82,23 +97,121 @@
 
 {% block scripts %}
 <script>
-document.querySelectorAll('.drop-zone').forEach(function(zone) {
-  var fileType = zone.dataset.fileType;
-  var input = document.getElementById('file-' + fileType);
-  if (input) {
-    zone.addEventListener('click', function(e) {
-      if (e.target.tagName !== 'INPUT') input.click();
-    });
-  }
-});
-(function() {
-  var types = ["courses", "rooms", "lecturers", "groups"];
-  var allOk = types.every(function(t) {
-    var el = document.getElementById("upload-item-" + t);
-    return el && el.querySelector(".file-status.ok");
+// ── shared helpers (global scope so both upload and sample-load can call them) ──
+function setUploadStatus(cls, text) {
+  var el = document.getElementById("combined-status");
+  el.className = "file-status " + cls;
+  el.textContent = text;
+}
+
+function updateStatCards(data) {
+  var map = { courses: data.courses, rooms: data.rooms, lecturers: data.lecturers, groups: data.groups };
+  Object.keys(map).forEach(function (key) {
+    var val  = document.getElementById("stat-val-" + key);
+    var card = document.getElementById("stat-" + key);
+    if (val)  val.textContent = map[key] || 0;
+    if (card) { card.classList.remove("navy"); if ((map[key] || 0) > 0) card.classList.add("green"); }
   });
-  var btn = document.getElementById("proceed-btn");
-  if (btn) btn.disabled = !allOk;
+}
+
+function showBreakdown(data) {
+  document.getElementById("bd-courses").textContent   = data.courses   || 0;
+  document.getElementById("bd-rooms").textContent     = data.rooms     || 0;
+  document.getElementById("bd-lecturers").textContent = data.lecturers || 0;
+  document.getElementById("bd-groups").textContent    = data.groups    || 0;
+  document.getElementById("breakdown").style.display  = "block";
+}
+
+function onDataLoaded(data, filename, info) {
+  updateStatCards(data);
+  showBreakdown(data);
+  setUploadStatus("ok", "✓ " + (filename ? "Uploaded" : "Sample data loaded"));
+  document.getElementById("combined-filename").textContent = filename || "Sample dataset (built-in)";
+  document.getElementById("combined-info").textContent    = info;
+  var pb = document.getElementById("proceed-btn");
+  if (pb) pb.disabled = false;
+}
+
+// ── drag-and-drop / file picker ──
+(function () {
+  var zone  = document.getElementById("combined-zone");
+  var input = document.getElementById("file-combined");
+
+  var allLoaded = {{ 'true' if (counts.courses > 0 and counts.rooms > 0 and counts.lecturers > 0 and counts.groups > 0) else 'false' }};
+  if (allLoaded) {
+    var pb = document.getElementById("proceed-btn");
+    if (pb) pb.disabled = false;
+  }
+
+  zone.addEventListener("click",     function ()  { input.click(); });
+  zone.addEventListener("dragover",  function (e) { e.preventDefault(); zone.classList.add("drag-over"); });
+  zone.addEventListener("dragleave", function ()  { zone.classList.remove("drag-over"); });
+  zone.addEventListener("drop", function (e) {
+    e.preventDefault();
+    zone.classList.remove("drag-over");
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  input.addEventListener("change", function () {
+    if (input.files.length) handleFile(input.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file.name.endsWith(".csv")) { showNotification("Only CSV files are accepted.", "error"); return; }
+    setUploadStatus("uploading", "⟳ Uploading…");
+    document.getElementById("combined-filename").textContent = file.name;
+    document.getElementById("combined-info").textContent = formatBytes(file.size);
+
+    var fd = new FormData();
+    fd.append("file", file);
+
+    fetch("/upload/combined", { method: "POST", body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.success) {
+          onDataLoaded(data, file.name,
+            data.courses + " courses · " + data.rooms + " rooms · " +
+            data.lecturers + " lecturers · " + data.groups + " groups");
+          showNotification("Dataset loaded successfully.", "success");
+        } else {
+          setUploadStatus("err", "✗ Error");
+          document.getElementById("combined-info").textContent = data.error || "Upload failed";
+          showNotification(data.error || "Upload failed.", "error");
+        }
+      })
+      .catch(function () {
+        setUploadStatus("err", "✗ Error");
+        showNotification("Upload request failed.", "error");
+      });
+  }
+
+  function formatBytes(b) { return b < 1024 ? b + " B" : (b / 1024).toFixed(1) + " KB"; }
 })();
+
+// ── load sample data button ──
+function loadSampleData() {
+  var btn = document.getElementById("sample-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading…';
+
+  fetch("/upload/load-sample", { method: "POST" })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-database-fill-up"></i> Load Sample Data';
+      if (data.success) {
+        onDataLoaded(data, null,
+          data.courses + " courses · " + data.rooms + " rooms · " +
+          data.lecturers + " lecturers · " + data.groups + " groups");
+        showNotification("Sample data loaded successfully.", "success");
+      } else {
+        showNotification(data.error || "Failed to load sample data.", "error");
+      }
+    })
+    .catch(function () {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-database-fill-up"></i> Load Sample Data';
+      showNotification("Request failed.", "error");
+    });
+}
 </script>
 {% endblock %}
