@@ -217,7 +217,7 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (!data.success) {
-          alert('Failed to start generation.');
+          alert(data.error || 'Failed to start generation.');
           origStart.disabled = false;
           origStart.innerHTML = '<i class="bi bi-play-circle-fill"></i> Start Generation';
           return;

@@ -1,4 +1,5 @@
 import threading
+from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, jsonify, current_app
 from flask_login import login_required
 from models.models import db, GenerationSession, TimetableEntry, Course
@@ -22,6 +23,18 @@ def generate_page():
 @generate_bp.route("/generate/start", methods=["POST"])
 @login_required
 def start_generation():
+    # Reject if a generation is already running (prevents duplicate-entry race condition)
+    cutoff = datetime.utcnow() - timedelta(minutes=15)
+    running = GenerationSession.query.filter(
+        GenerationSession.status.in_(["PENDING", "GENERATING", "VALIDATING"]),
+        GenerationSession.created_at > cutoff,
+    ).first()
+    if running:
+        return jsonify({
+            "success": False,
+            "error": "A generation is already in progress. Please wait for it to finish.",
+        }), 409
+
     semester = request.form.get("semester", "ALPHA")
     department = request.form.get("department", "ALL")
     level_filter = request.form.get("level_filter", "ALL")

@@ -5,7 +5,7 @@ import os
 import re
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
 from flask_login import login_required
-from models.models import db, Course, Room, Lecturer, StudentGroup
+from models.models import db, Course, Room, Lecturer, StudentGroup, TimetableEntry
 
 upload_bp = Blueprint("upload", __name__)
 
@@ -78,6 +78,8 @@ def load_sample():
         lecturers_rows = read_sample("lecturers.csv")
         groups_rows    = read_sample("student_groups.csv")
 
+        # Clear timetable entries first — PostgreSQL FK constraints require this
+        TimetableEntry.query.delete()
         Course.query.delete()
         for row in courses_rows:
             db.session.add(Course(
@@ -250,7 +252,7 @@ def upload_combined():
         # ── COURSES (deduplicate by course_code) ──
         seen_courses = {}
         for row in rows:
-            code = row["course"].strip()
+            code = row["course"].strip()[:100]
             if not code or code in seen_courses:
                 continue
             room_name = row.get("room", "").strip()
@@ -334,6 +336,8 @@ def upload_combined():
             )
 
         # ── Clear old data and persist ──
+        # TimetableEntry must go first — PostgreSQL FK constraints require it
+        TimetableEntry.query.delete()
         Course.query.delete()
         Room.query.delete()
         Lecturer.query.delete()

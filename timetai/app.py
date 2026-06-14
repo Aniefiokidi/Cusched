@@ -67,6 +67,32 @@ def dashboard():
 app.register_blueprint(main_bp)
 
 
+@main_bp.route("/admin/reset-db")
+@login_required
+def reset_db():
+    """Drop and recreate all tables — use once after a schema change on Vercel."""
+    try:
+        db.drop_all()
+        db.create_all()
+        seed_database()
+        return (
+            "<html><body style='font-family:sans-serif;padding:40px;text-align:center;'>"
+            "<h2 style='color:#2E7D32;'>&#10003; Database Reset Successful</h2>"
+            "<p>All tables dropped and recreated with the latest schema.<br>"
+            "Default admin (<b>admin@timetai.ng</b>) and constraints reloaded.</p>"
+            "<a href='/dashboard' style='color:#1A3C5E;font-weight:600;'>Go to Dashboard &rarr;</a>"
+            "</body></html>"
+        )
+    except Exception as ex:
+        return (
+            f"<html><body style='font-family:sans-serif;padding:40px;text-align:center;'>"
+            f"<h2 style='color:#c62828;'>&#10007; Reset Failed</h2>"
+            f"<pre style='text-align:left;background:#fafafa;padding:16px;border-radius:8px;'>{ex}</pre>"
+            f"<a href='/dashboard' style='color:#1A3C5E;font-weight:600;'>Go to Dashboard &rarr;</a>"
+            f"</body></html>"
+        )
+
+
 def _init_db():
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     db.create_all()

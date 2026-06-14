@@ -17,8 +17,8 @@ class Admin(db.Model, UserMixin):
 class Course(db.Model):
     __tablename__ = "courses"
     id = db.Column(db.Integer, primary_key=True)
-    course_code = db.Column(db.String(20), unique=True, nullable=False)
-    course_title = db.Column(db.String(200), nullable=False)
+    course_code = db.Column(db.String(100), unique=True, nullable=False)
+    course_title = db.Column(db.String(500), nullable=False)
     credit_units = db.Column(db.Integer, nullable=False)
     course_type = db.Column(db.String(20), nullable=False, default="LECTURE")
     department = db.Column(db.String(50), nullable=False)
@@ -39,7 +39,7 @@ class Course(db.Model):
 class Room(db.Model):
     __tablename__ = "rooms"
     id = db.Column(db.Integer, primary_key=True)
-    room_name = db.Column(db.String(50), unique=True, nullable=False)
+    room_name = db.Column(db.String(100), unique=True, nullable=False)
     room_type = db.Column(db.String(30), nullable=False, default="LECTURE_HALL")
     capacity = db.Column(db.Integer, nullable=False)
     building = db.Column(db.String(100))
@@ -91,7 +91,7 @@ class Lecturer(db.Model):
 class StudentGroup(db.Model):
     __tablename__ = "student_groups"
     id = db.Column(db.Integer, primary_key=True)
-    group_name = db.Column(db.String(50), unique=True, nullable=False)
+    group_name = db.Column(db.String(100), unique=True, nullable=False)
     programme = db.Column(db.String(100), nullable=False)
     level = db.Column(db.Integer, nullable=False)
     student_count = db.Column(db.Integer, nullable=False)
