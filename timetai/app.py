@@ -67,27 +67,55 @@ def dashboard():
 @main_bp.route("/admin/reset-db")
 @login_required
 def reset_db():
-    """Drop and recreate all tables with the latest schema."""
+    """Apply schema migrations (ALTER COLUMN) and seed default data."""
+    from sqlalchemy import text
+    notes = []
+    errors = []
+
+    # Widen columns that were too narrow in the original schema
+    alters = [
+        ("courses",        "course_code",  "VARCHAR(100)"),
+        ("courses",        "course_title", "VARCHAR(500)"),
+        ("rooms",          "room_name",    "VARCHAR(100)"),
+        ("student_groups", "group_name",   "VARCHAR(100)"),
+    ]
+    for table, col, new_type in alters:
+        try:
+            db.session.execute(text(f"ALTER TABLE {table} ALTER COLUMN {col} TYPE {new_type}"))
+            notes.append(f"&#10003; {table}.{col} &rarr; {new_type}")
+        except Exception as e:
+            db.session.rollback()
+            notes.append(f"&#x26A0; {table}.{col}: {e} (may already be correct)")
+
     try:
-        db.drop_all()
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        errors.append(f"Commit failed: {e}")
+
+    # Create any missing tables (safe to run even if tables exist)
+    try:
         db.create_all()
+        notes.append("&#10003; Missing tables created")
+    except Exception as e:
+        errors.append(f"create_all: {e}")
+
+    try:
         seed_database()
-        return (
-            "<html><body style='font-family:sans-serif;padding:40px;text-align:center;'>"
-            "<h2 style='color:#2E7D32;'>&#10003; Database Reset Successful</h2>"
-            "<p>All tables dropped and recreated with the latest schema.<br>"
-            "Default admin (<b>admin@timetai.ng</b>) and constraints reloaded.</p>"
-            "<a href='/dashboard' style='color:#1A3C5E;font-weight:600;'>Go to Dashboard &rarr;</a>"
-            "</body></html>"
-        )
-    except Exception as ex:
-        return (
-            f"<html><body style='font-family:sans-serif;padding:40px;text-align:center;'>"
-            f"<h2 style='color:#c62828;'>&#10007; Reset Failed</h2>"
-            f"<pre style='text-align:left;background:#fafafa;padding:16px;border-radius:8px;'>{ex}</pre>"
-            f"<a href='/dashboard' style='color:#1A3C5E;font-weight:600;'>Go to Dashboard &rarr;</a>"
-            f"</body></html>"
-        )
+        notes.append("&#10003; Default admin and constraints seeded")
+    except Exception as e:
+        errors.append(f"seed: {e}")
+
+    rows = "".join(f"<li>{n}</li>" for n in notes)
+    errs = "".join(f"<li style='color:#c62828'>{e}</li>" for e in errors)
+    return (
+        "<html><body style='font-family:sans-serif;padding:40px;max-width:600px;margin:auto;'>"
+        "<h2 style='color:#2E7D32;'>&#10003; Schema Migration Done</h2>"
+        f"<ul>{rows}</ul>"
+        + (f"<h3 style='color:#c62828;'>Errors</h3><ul>{errs}</ul>" if errors else "")
+        + "<br><a href='/dashboard' style='color:#1A3C5E;font-weight:600;'>Go to Dashboard &rarr;</a>"
+        "</body></html>"
+    )
 
 
 # All routes defined before registering the blueprint
