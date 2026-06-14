@@ -137,8 +137,35 @@ def seed_database():
         print("[SEED] Default constraints loaded.")
 
 
+_startup_error = None
+
 with app.app_context():
-    _init_db()
+    try:
+        _init_db()
+    except Exception as _e:
+        _startup_error = str(_e)
+        print(f"[STARTUP] DB init failed: {_e}", flush=True)
+
+
+@app.route("/health")
+def health():
+    """Public health-check — shows DB connection status and any startup error."""
+    try:
+        db.session.execute(db.text("SELECT 1"))
+        db_ok = True
+        db_msg = "Connected"
+    except Exception as ex:
+        db_ok = False
+        db_msg = str(ex)
+    status = "ok" if (db_ok and not _startup_error) else "error"
+    from flask import jsonify as _j
+    return _j({
+        "status": status,
+        "db": db_ok,
+        "db_msg": db_msg,
+        "startup_error": _startup_error,
+    }), (200 if status == "ok" else 500)
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="127.0.0.1", port=5000)

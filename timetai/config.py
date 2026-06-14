@@ -22,11 +22,17 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "timetai-dev-secret-2025")
     SQLALCHEMY_DATABASE_URI = _db_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Allow the background generation thread to use the SQLite connection
+    # SQLite needs check_same_thread=False for background threads.
+    # PostgreSQL (Neon) needs pool_pre_ping so suspended DBs are detected and
+    # reconnected automatically, plus a generous connect_timeout for cold starts.
     SQLALCHEMY_ENGINE_OPTIONS = (
         {"connect_args": {"check_same_thread": False}}
         if not os.getenv("DATABASE_URL")
-        else {}
+        else {
+            "pool_pre_ping": True,
+            "pool_recycle": 300,
+            "connect_args": {"connect_timeout": 30},
+        }
     )
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
     MAX_ITERATIONS = 5
