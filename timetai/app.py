@@ -64,13 +64,10 @@ def dashboard():
                            hard_cons=hard_cons, soft_cons=soft_cons, last_session=last_session)
 
 
-app.register_blueprint(main_bp)
-
-
 @main_bp.route("/admin/reset-db")
 @login_required
 def reset_db():
-    """Drop and recreate all tables — use once after a schema change on Vercel."""
+    """Drop and recreate all tables with the latest schema."""
     try:
         db.drop_all()
         db.create_all()
@@ -93,10 +90,8 @@ def reset_db():
         )
 
 
-def _init_db():
-    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-    db.create_all()
-    seed_database()
+# All routes defined before registering the blueprint
+app.register_blueprint(main_bp)
 
 
 DEFAULT_HARD_CONSTRAINTS = [
@@ -137,6 +132,12 @@ def seed_database():
         print("[SEED] Default constraints loaded.")
 
 
+def _init_db():
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    db.create_all()
+    seed_database()
+
+
 _startup_error = None
 
 with app.app_context():
@@ -150,6 +151,7 @@ with app.app_context():
 @app.route("/health")
 def health():
     """Public health-check — shows DB connection status and any startup error."""
+    from flask import jsonify as _j
     try:
         db.session.execute(db.text("SELECT 1"))
         db_ok = True
@@ -158,7 +160,6 @@ def health():
         db_ok = False
         db_msg = str(ex)
     status = "ok" if (db_ok and not _startup_error) else "error"
-    from flask import jsonify as _j
     return _j({
         "status": status,
         "db": db_ok,
