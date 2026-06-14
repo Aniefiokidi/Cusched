@@ -4,6 +4,8 @@ import traceback
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Declared at top level so Vercel's static scanner can find it
+app = None
 _import_error = None
 
 try:
